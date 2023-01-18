@@ -1,47 +1,44 @@
-import {v4 as uuidv4} from "uuid"
+import {v4 as uuidv4} from "uuid";
+import {ConnectDB,db} from "../DB/DBConnection.js";
 
-let users=[]; // act as a db for temporaray
-// for(var i = 0; i<100;i++){
-//     users.push(
-//         {
-//             "name":"Nadeesh Hirushan",
-//             "age":24
-//         }
-//     );
-// }
+ConnectDB();
+const collection = db.collection('Users');
 
-export const getUsers = (req,res) => {
+
+export const getUsers = async (req,res) => {
+
+    const users = await collection.find({}).toArray();
     res.send(users);
 }
 
-export const createUser = (req,res) => {
+export const createUser = async (req,res) => {
     //console.log('POST ROUTE REACHED');
     const user = {id: uuidv4() , ...req.body }
-    users.push(user); // add user to the mongo database
+    const insertResult = await collection.insertOne(user);
     console.log(user);
-    res.send(user);
+    res.send(insertResult);
 }
 
-export const getUser = (req,res) => {
+export const getUser = async (req,res) => {
     //console.log('GET BY ID ROUTE REACHED');
     const {id} = req.params;
-    const foundUser = users.find((user)=> user.id == id);
+    const foundUser = await collection.findOne({ id: id });
     res.send(foundUser);
 }
 
-export const deleteUser = (req,res) => {
-    console.log('DELETE BY ID ROUTE REACHED');
+export const deleteUser = async (req,res) => {
+    //console.log('DELETE BY ID ROUTE REACHED');
     const {id} = req.params;
-    users = users.filter((user) => user.id != id);
-    res.send(`${id} is deleted.`);
+    const deleteResult = await collection.deleteOne({ id: id });
+    res.send(deleteResult);
 }
 
-export const updateUser =  (req,res) => {
-    console.log('UPDATE BY ID ROUTE REACHED');
+export const updateUser =  async (req,res) => {
+    //console.log('UPDATE BY ID ROUTE REACHED');
     const {id} = req.params;
     const {name , age} = req.body;
 
-    const user = users.find((user => user.id ==  id));
+    const user = await collection.findOne({ id: id });
 
     if(name){
         user.name = name;
@@ -51,5 +48,9 @@ export const updateUser =  (req,res) => {
         user.age = age;
     }
 
-    res.send(`${id} is updated.`);
+    const updateResult = await collection.updateOne(
+        { id: id }, 
+        { $set: { name: user.name,age: user.age  } }
+        );
+    res.send(updateResult);
 }
